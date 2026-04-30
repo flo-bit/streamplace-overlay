@@ -5,13 +5,9 @@ import { resolve } from 'node:path';
 const COLLECTION = 'place.stream.chat.message';
 const JETSTREAM_URL = 'wss://jetstream2.us-east.bsky.network/subscribe';
 
-const streamerDid = process.argv[2];
-const outFile = resolve(process.argv[3] ?? 'chat.txt');
-
-if (!streamerDid || !streamerDid.startsWith('did:')) {
-	console.error('usage: tsx scripts/listen-chat.ts <streamer-did> [out-file]');
-	process.exit(1);
-}
+const args = process.argv.slice(2);
+const streamerDid = args[0]?.startsWith('did:') ? args[0] : undefined;
+const outFile = resolve((streamerDid ? args[1] : args[0]) ?? 'chat.txt');
 
 const url = `${JETSTREAM_URL}?wantedCollections=${encodeURIComponent(COLLECTION)}`;
 
@@ -35,7 +31,9 @@ type JetstreamEvent = {
 };
 
 function connect() {
-	console.error(`[listen-chat] connecting, filtering streamer=${streamerDid}`);
+	console.error(
+		`[listen-chat] connecting, ${streamerDid ? `filtering streamer=${streamerDid}` : 'no streamer filter'}`,
+	);
 	const ws = new WebSocket(url);
 
 	ws.addEventListener('open', () => console.error('[listen-chat] connected'));
@@ -50,7 +48,8 @@ function connect() {
 		const c = msg.commit;
 		if (!c || c.operation !== 'create' || c.collection !== COLLECTION) return;
 		const rec = c.record;
-		if (!rec || rec.streamer !== streamerDid) return;
+		if (!rec) return;
+		if (streamerDid && rec.streamer !== streamerDid) return;
 
 		const line = `${msg.did}: ${rec.text}`;
 		appendFileSync(outFile, line + '\n');

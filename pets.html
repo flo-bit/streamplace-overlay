@@ -302,6 +302,55 @@
     100% { transform: translate(var(--sway, 0), -110vh) scale(var(--end-scale, 1.1)); opacity: 0; }
   }
 
+  /* !fireworks — scene-wide bursts */
+  .fx-fireworks {
+    position: fixed; inset: 0; pointer-events: none; overflow: hidden;
+    z-index: 160;
+    animation: fx-fade-out 1s ease-out 7.5s forwards;
+  }
+  .firework-particle {
+    position: absolute;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    box-shadow: 0 0 12px 2px rgba(255,255,255,0.55);
+    opacity: 0;
+    animation-name: firework-burst;
+    animation-timing-function: cubic-bezier(.25, .8, .35, 1);
+    animation-fill-mode: forwards;
+  }
+  @keyframes firework-burst {
+    0%   { transform: translate(0, 0) scale(0.5); opacity: 0; }
+    8%   { opacity: 1; }
+    100% { transform: translate(var(--dx), var(--dy)) scale(0.4); opacity: 0; }
+  }
+
+  /* Per-pet smoke — wispy gray puffs from upper face */
+  .smoke {
+    position: absolute;
+    top: -14px;
+    left: 50%;
+    margin-left: -35px;
+    width: 70px;
+    height: 90px;
+    opacity: 0;
+    pointer-events: none;
+  }
+  .smoke svg { width: 100%; height: 100%; overflow: visible; }
+  .smoke-puff {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation-name: smoke-puff;
+    animation-timing-function: ease-out;
+    animation-fill-mode: forwards;
+    opacity: 0;
+  }
+  .pet.smoking .smoke { opacity: 1; }
+  @keyframes smoke-puff {
+    0%   { transform: translate(0, 0) scale(var(--smoke-start, 0.2)); opacity: 0; }
+    20%  { opacity: var(--smoke-peak, 0.7); }
+    100% { transform: translate(var(--smoke-dx, 0), var(--smoke-dy, -55px)) scale(var(--smoke-end, 1.8)); opacity: 0; }
+  }
+
   /* !quake — shakes the stage */
   .fx-quake { animation: quake 0.55s linear; }
   @keyframes quake {
@@ -323,6 +372,24 @@
     0%   { translate: 0 0; }
     45%  { translate: 0 -58px; }
     100% { translate: 0 0; }
+  }
+
+  /* Barrel roll — Star Fox style: arc up while rotating 360 */
+  .pet.rolling .pet-flip { animation: barrel-roll 0.75s cubic-bezier(.4,.0,.4,1); }
+  @keyframes barrel-roll {
+    0%   { translate: 0 0;     rotate: 0deg;   }
+    35%  { translate: 0 -32px; rotate: 130deg; }
+    65%  { translate: 0 -32px; rotate: 230deg; }
+    100% { translate: 0 0;     rotate: 360deg; }
+  }
+
+  /* Teleport — fade out, JS moves the pet, fade in */
+  .pet.teleporting { animation: teleport 0.7s ease-in-out; }
+  @keyframes teleport {
+    0%   { opacity: 1; }
+    35%  { opacity: 0; }
+    65%  { opacity: 0; }
+    100% { opacity: 1; }
   }
 
   /* Dance — bigger sway, double spin, finale flourish */
@@ -591,6 +658,30 @@ const HEART_SVG = `
   </svg>
 `;
 const FART_GREENS = ['#9bbf2f', '#aacc3a', '#b8d650', '#8eb02a', '#7ea020', '#c4dc66', '#a3c544', '#88a52a', '#d4e878'];
+const SMOKE_GRAYS = ['#dadada', '#cccccc', '#bbbbbb', '#aaaaaa', '#c8c8c8', '#9c9c9c', '#e8e8e8'];
+
+function randomSmokeSvg() {
+  const n = 5 + Math.floor(Math.random() * 4);
+  const rand = (a, b) => a + Math.random() * (b - a);
+  let body = '';
+  let maxDur = 0;
+  for (let i = 0; i < n; i++) {
+    const cx = rand(20, 50);
+    const cy = rand(55, 75);
+    const r  = rand(7, 16);
+    const fill = SMOKE_GRAYS[Math.floor(Math.random() * SMOKE_GRAYS.length)];
+    const peak = rand(0.45, 0.75);
+    const dx = rand(-14, 14);
+    const dy = rand(-35, -65);
+    const startScale = rand(0.15, 0.32);
+    const endScale = rand(1.4, 2.4);
+    const duration = rand(1.5, 2.8);
+    const delay = rand(0, 0.6);
+    if (duration + delay > maxDur) maxDur = duration + delay;
+    body += `<circle class="smoke-puff" cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="${r.toFixed(1)}" fill="${fill}" style="animation-duration:${duration.toFixed(2)}s;animation-delay:${delay.toFixed(2)}s;--smoke-start:${startScale.toFixed(2)};--smoke-end:${endScale.toFixed(2)};--smoke-dx:${dx.toFixed(1)}px;--smoke-dy:${dy.toFixed(1)}px;--smoke-peak:${peak.toFixed(2)}"/>`;
+  }
+  return { svg: `<svg viewBox="0 0 70 90" xmlns="http://www.w3.org/2000/svg">${body}</svg>`, durationMs: maxDur * 1000 + 100 };
+}
 
 function randomFartSvg() {
   const n = 4 + Math.floor(Math.random() * 5); // 4–8 puffs
@@ -723,6 +814,9 @@ class Pet {
     this.fartEl = document.createElement('div');
     this.fartEl.className = 'fart';
 
+    this.smokeEl = document.createElement('div');
+    this.smokeEl.className = 'smoke';
+
     this.labelEl = document.createElement('div');
     this.labelEl.className = 'pet-label';
 
@@ -730,6 +824,7 @@ class Pet {
     this.el.appendChild(this.zzzEl);
     this.el.appendChild(this.heartEl);
     this.el.appendChild(this.fartEl);
+    this.el.appendChild(this.smokeEl);
     this.el.appendChild(this.labelEl);
 
     this.setHandle(handle);
@@ -898,6 +993,51 @@ class Pet {
     this.lastMessage = performance.now();
   }
 
+  roll() {
+    this.el.classList.remove('rolling');
+    void this.el.offsetWidth;
+    this.el.classList.add('rolling');
+    setTimeout(() => this.el.classList.remove('rolling'), 800);
+    this.lastMessage = performance.now();
+  }
+
+  smoke() {
+    this.el.classList.remove('smoking');
+    void this.el.offsetWidth;
+    const { svg, durationMs } = randomSmokeSvg();
+    this.smokeEl.innerHTML = svg;
+    this.el.classList.add('smoking');
+    setTimeout(() => {
+      this.el.classList.remove('smoking');
+      this.smokeEl.innerHTML = '';
+    }, durationMs);
+    this.lastMessage = performance.now();
+  }
+
+  sleep() {
+    this.setState('sleep');
+    this.stateTimer = 0;
+    this.nextDecision = 12 + Math.random() * 12;
+    this.lastMessage = performance.now();
+    saveStateDebounced();
+  }
+
+  teleport() {
+    this.el.classList.remove('teleporting');
+    void this.el.offsetWidth;
+    this.el.classList.add('teleporting');
+    // Move during the invisible middle of the fade
+    setTimeout(() => {
+      this.x = Math.random() * (window.innerWidth - 110);
+      // Sometimes flip direction for variety
+      if (Math.random() < 0.5) this.dir *= -1;
+      this.applyTransform();
+    }, 320);
+    setTimeout(() => this.el.classList.remove('teleporting'), 720);
+    this.lastMessage = performance.now();
+    saveStateDebounced();
+  }
+
   showMessage(rawText) {
     if (!rawText) return;
     const safe = redactBadWords(String(rawText)).slice(0, 100).trim();
@@ -1040,7 +1180,39 @@ async function getProfile(did) {
 
 /* ---------- Bang-command scene effects ---------- */
 
-const fxState = { party: false, snow: false, rain: false, confetti: false, hearts: false, quake: false };
+const fxState = { party: false, snow: false, rain: false, confetti: false, hearts: false, quake: false, fireworks: false };
+
+function triggerFireworks() {
+  if (fxState.fireworks) return;
+  fxState.fireworks = true;
+  const overlay = document.createElement('div');
+  overlay.className = 'fx-fireworks';
+  document.body.appendChild(overlay);
+  const colors = ['#ff5577', '#ffd93d', '#3affc8', '#ff8e3c', '#c84fff', '#3ad4ff', '#ffffff', '#ff3a8e'];
+  const burstCount = 7;
+  for (let b = 0; b < burstCount; b++) {
+    const cx = 12 + Math.random() * 76;
+    const cy = 12 + Math.random() * 45;
+    const color = colors[Math.floor(Math.random() * colors.length)];
+    const burstDelay = b * (0.4 + Math.random() * 0.7);
+    const particleCount = 28 + Math.floor(Math.random() * 18);
+    for (let i = 0; i < particleCount; i++) {
+      const p = document.createElement('div');
+      p.className = 'firework-particle';
+      p.style.left = `${cx}vw`;
+      p.style.top = `${cy}vh`;
+      p.style.background = color;
+      const angle = Math.random() * Math.PI * 2;
+      const distance = 60 + Math.random() * 140;
+      p.style.setProperty('--dx', `${(Math.cos(angle) * distance).toFixed(1)}px`);
+      p.style.setProperty('--dy', `${(Math.sin(angle) * distance + 80).toFixed(1)}px`);
+      p.style.animationDelay = `${burstDelay.toFixed(2)}s`;
+      p.style.animationDuration = `${(1.0 + Math.random() * 0.8).toFixed(2)}s`;
+      overlay.appendChild(p);
+    }
+  }
+  setTimeout(() => { overlay.remove(); fxState.fireworks = false; }, 8500);
+}
 
 function triggerRain() {
   if (fxState.rain) return;
@@ -1270,6 +1442,10 @@ async function handleChatMessage(authorDid, record) {
     jump:   new Set(['jump', 'spring', 'springen', 'springt', 'hop', '🦘']),
     dance:  new Set(['dance', 'tanz', 'tanze', 'tanzen', 'dans', 'dansen', '💃', '🕺']),
     fart:   new Set(['fart', 'farts', 'farted', 'farting', 'scheet', 'scheten', 'furz', '💨']),
+    roll:   new Set(['roll', 'rolls', 'barrelroll', 'rolle', 'rollen', 'spin', '🌀']),
+    teleport: new Set(['teleport', 'tp', 'warp', 'beam', '✨']),
+    sleep:  new Set(['sleep', 'sleeping', 'snooze', 'rest', 'schlafen', 'schlaf', 'slapen', 'slaap', '😴', '💤']),
+    smoke:  new Set(['smoke', 'smoking', 'cig', 'cigarette', 'rauch', 'rauchen', 'rook', 'roken', '🚬']),
     wider:    new Set(['wide', 'wider', 'breit', 'breiter', 'breed', 'breder', 'wijd', 'wijder', 'stretch']),
     narrower: new Set(['narrow', 'narrower', 'schmal', 'schmaler', 'smal', 'thin', 'dun']),
     taller:   new Set(['tall', 'taller', 'lang', 'länger', 'laenger', 'hoog', 'hoger']),
@@ -1287,6 +1463,7 @@ async function handleChatMessage(authorDid, record) {
   if (/!confetti\b/i.test(text))                 { triggerConfetti(); bangFired = true; }
   if (/!hearts?\b/i.test(text))                  { triggerHearts();   bangFired = true; }
   if (/!(quake|earthquake|shake)\b/i.test(text)) { triggerQuake();    bangFired = true; }
+  if (/!fireworks?\b/i.test(text))               { triggerFireworks(); bangFired = true; }
 
   // Tokenize: split on whitespace, strip ASCII edge-punctuation, leave letters/digits/emoji intact.
   const tokens = text.split(/\s+/).map(t => t.replace(/^[!?.,;:'"()\[\]{}*]+|[!?.,;:'"()\[\]{}*]+$/g, ''));
@@ -1333,6 +1510,12 @@ async function handleChatMessage(authorDid, record) {
   if (counts.fart) {
     for (let i = 0; i < counts.fart; i++) setTimeout(() => pet.fart(), i * 600);
   }
+  if (counts.roll) {
+    for (let i = 0; i < counts.roll; i++) setTimeout(() => pet.roll(), i * 800);
+  }
+  if (counts.teleport) pet.teleport();
+  if (counts.sleep) pet.sleep();
+  if (counts.smoke) pet.smoke();
   if (counts.wider)    pet.setStretchX(pet.stretchX * Math.pow(1.25, counts.wider));
   if (counts.narrower) pet.setStretchX(pet.stretchX / Math.pow(1.25, counts.narrower));
   if (counts.taller)   pet.setStretchY(pet.stretchY * Math.pow(1.25, counts.taller));
