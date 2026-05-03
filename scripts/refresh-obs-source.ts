@@ -1,4 +1,4 @@
-#!/usr/bin/env tsx
+#!/usr/bin/env bun
 // Refresh an OBS Browser Source via obs-websocket v5.
 // usage: refresh-obs-source.ts <source-name>
 // env: OBS_WEBSOCKET_URL (default ws://localhost:4455), OBS_WEBSOCKET_PASSWORD

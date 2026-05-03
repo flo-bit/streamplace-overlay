@@ -1,4 +1,4 @@
-#!/usr/bin/env tsx
+#!/usr/bin/env bun
 import { appendFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
