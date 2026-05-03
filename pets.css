@@ -1,0 +1,1032 @@
+/* ===== CSS Custom Properties (Design Tokens) ===== */
+      :root {
+        --font-system:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+        --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
+        --font-comic:
+          "Comic Sans MS", "Comic Sans", "Chalkboard SE", "Marker Felt",
+          system-ui, sans-serif;
+        --color-text-dim: rgba(255, 255, 255, 0.45);
+        --color-text-faint: rgba(255, 255, 255, 0.35);
+        --color-bg-overlay: rgba(20, 20, 28, 0.85);
+        --color-bg-pill: rgba(0, 0, 0, 0.32);
+        --color-shadow-text: 0 0 3px rgba(0, 0, 0, 0.8);
+        --color-shadow-pet: 0 6px 8px rgba(0, 0, 0, 0.35);
+        --pet-size: 110px;
+        --pet-bottom: 14px;
+        --anim-speed-default: 1;
+        --rate-limit-glow: drop-shadow(0 0 10px rgba(255, 40, 40, 0.95))
+          drop-shadow(0 0 22px rgba(255, 0, 0, 0.65));
+      }
+
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        background: transparent;
+        overflow: hidden;
+        font-family: var(--font-system);
+      }
+
+      #stage {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        height: 200px;
+        pointer-events: none;
+      }
+
+      #status {
+        position: fixed;
+        top: 6px;
+        right: 8px;
+        font-size: 10px;
+        color: var(--color-text-dim);
+        font-family: var(--font-mono);
+        pointer-events: none;
+        text-shadow: var(--color-shadow-text);
+      }
+      #status.hidden {
+        display: none;
+      }
+
+      #version {
+        position: fixed;
+        bottom: 4px;
+        right: 8px;
+        font-size: 10px;
+        color: var(--color-text-faint);
+        font-family: var(--font-mono);
+        pointer-events: none;
+        text-shadow: var(--color-shadow-text);
+      }
+
+      #reset-btn {
+        position: fixed;
+        bottom: 4px;
+        left: 8px;
+        width: 24px;
+        height: 24px;
+        background: transparent;
+        border: none;
+        color: var(--color-text-faint);
+        font-size: 14px;
+        cursor: pointer;
+        opacity: 0;
+        transition: opacity 0.3s;
+        z-index: 999;
+        pointer-events: auto;
+      }
+      #reset-btn:hover {
+        opacity: 0.8;
+        color: rgba(255, 255, 255, 0.8);
+      }
+      #stage:hover ~ #reset-btn,
+      #reset-btn:hover,
+      #reset-btn:focus-visible {
+        opacity: 0.6;
+      }
+
+      #reload-toast {
+        position: fixed;
+        top: 24px;
+        left: 50%;
+        transform: translateX(-50%) translateY(-12px);
+        padding: 8px 18px;
+        background: var(--color-bg-overlay);
+        color: #fff;
+        font-size: 13px;
+        font-weight: 600;
+        font-family: var(--font-mono);
+        letter-spacing: 0.06em;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        box-shadow: 0 4px 18px rgba(0, 0, 0, 0.5);
+        pointer-events: none;
+        opacity: 0;
+        z-index: 500;
+        animation: reload-toast 3.6s ease-out forwards;
+      }
+      @keyframes reload-toast {
+        0% {
+          opacity: 0;
+          transform: translateX(-50%) translateY(-12px);
+        }
+        8% {
+          opacity: 1;
+          transform: translateX(-50%) translateY(0);
+        }
+        80% {
+          opacity: 1;
+          transform: translateX(-50%) translateY(0);
+        }
+        100% {
+          opacity: 0;
+          transform: translateX(-50%) translateY(-8px);
+        }
+      }
+
+      /* ===== Pet ===== */
+      .pet {
+        position: absolute;
+        bottom: var(--pet-bottom);
+        left: 0;
+        width: var(--pet-size);
+        height: var(--pet-size);
+        transform-origin: 50% 100%;
+        will-change: transform;
+        filter: var(--color-shadow-pet);
+        --anim-speed: var(--anim-speed-default);
+      }
+
+      .pet-flip {
+        width: 100%;
+        height: 100%;
+        transform-origin: 50% 100%;
+        position: relative;
+        transition: filter 0.25s ease;
+      }
+      .pet-flip svg {
+        width: 100%;
+        height: 100%;
+        overflow: visible;
+      }
+
+      /* Rate-limit indicator — red glow around the pet */
+      .pet.rate-limited .pet-flip {
+        filter: var(--rate-limit-glow);
+      }
+
+      .rpg-sprite {
+        position: absolute;
+        bottom: 0;
+        left: 50%;
+        background-repeat: no-repeat;
+        image-rendering: pixelated;
+        image-rendering: crisp-edges;
+      }
+
+      /* ===== Label (handle pill + chat bubble) ===== */
+      .pet-label {
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: 11px;
+        font-weight: 700;
+        color: #fff;
+        text-shadow:
+          -1px -1px 0 #000,
+          1px -1px 0 #000,
+          -1px 1px 0 #000,
+          1px 1px 0 #000,
+          0 0 6px rgba(0, 0, 0, 0.85);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 240px;
+        pointer-events: none;
+        letter-spacing: 0.02em;
+        background: var(--color-bg-pill);
+        padding: 1px 6px;
+        border-radius: 999px;
+        backdrop-filter: blur(2px);
+        transition:
+          background-color 0.18s,
+          color 0.18s;
+      }
+      .pet-label.chatting {
+        background: rgba(255, 255, 255, 0.96);
+        color: #1a1a1a;
+        text-shadow: none;
+        font-weight: 600;
+        font-family: var(--font-comic);
+        border-radius: 6px;
+        padding: 3px 8px;
+        border: 2px solid #1a1a1a;
+        box-shadow: 2px 2px 0 #1a1a1a;
+        white-space: normal;
+        text-align: center;
+        line-height: 1.25;
+        min-width: 80px;
+        max-width: min(80ch, 540px);
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        word-break: break-word;
+      }
+
+      /* ===== Animations (all use calc() with --anim-speed) ===== */
+      .pet:not(.sprite) .body {
+        transform-origin: 50% 100%;
+        animation: bob calc(0.42s / var(--anim-speed)) ease-in-out infinite;
+      }
+      .pet:not(.sprite).idle .body {
+        animation: breathe calc(2.6s / var(--anim-speed)) ease-in-out infinite;
+      }
+      .pet:not(.sprite).sleep .body {
+        animation: sleep-breathe calc(3.4s / var(--anim-speed)) ease-in-out
+          infinite;
+      }
+
+      @keyframes bob {
+        0%,
+        100% {
+          transform: translateY(0);
+        }
+        50% {
+          transform: translateY(-3px);
+        }
+      }
+      @keyframes breathe {
+        0%,
+        100% {
+          transform: scaleY(1) scaleX(1);
+        }
+        50% {
+          transform: scaleY(0.97) scaleX(1.02);
+        }
+      }
+      @keyframes sleep-breathe {
+        0%,
+        100% {
+          transform: scaleY(0.96) scaleX(1.04) translateY(2px);
+        }
+        50% {
+          transform: scaleY(0.92) scaleX(1.06) translateY(4px);
+        }
+      }
+
+      .pet.bunny .body {
+        animation: hop calc(0.55s / var(--anim-speed))
+          cubic-bezier(0.4, 0, 0.2, 1) infinite;
+      }
+      .pet.bunny.idle .body {
+        animation: breathe calc(2.6s / var(--anim-speed)) ease-in-out infinite;
+      }
+      .pet.bunny.sleep .body {
+        animation: sleep-breathe calc(3.4s / var(--anim-speed)) ease-in-out
+          infinite;
+      }
+      @keyframes hop {
+        0%,
+        100% {
+          transform: translateY(0) scaleY(1);
+        }
+        25% {
+          transform: translateY(-22px) scaleY(1.04);
+        }
+        50% {
+          transform: translateY(0) scaleY(0.94);
+        }
+        75% {
+          transform: translateY(0) scaleY(1.02);
+        }
+      }
+
+      .pet.duck .body {
+        animation: waddle calc(0.55s / var(--anim-speed)) ease-in-out infinite;
+      }
+      .pet.duck.idle .body {
+        animation: breathe calc(2.6s / var(--anim-speed)) ease-in-out infinite;
+      }
+      .pet.duck.sleep .body {
+        animation: sleep-breathe calc(3.4s / var(--anim-speed)) ease-in-out
+          infinite;
+      }
+      @keyframes waddle {
+        0%,
+        100% {
+          transform: rotate(-5deg) translateY(0);
+        }
+        50% {
+          transform: rotate(5deg) translateY(-1px);
+        }
+      }
+
+      .pet.goose .body {
+        animation: goose-strut calc(0.7s / var(--anim-speed)) ease-in-out
+          infinite;
+      }
+      .pet.goose.idle .body {
+        animation: breathe calc(2.6s / var(--anim-speed)) ease-in-out infinite;
+      }
+      .pet.goose.sleep .body {
+        animation: sleep-breathe calc(3.4s / var(--anim-speed)) ease-in-out
+          infinite;
+      }
+      @keyframes goose-strut {
+        0%,
+        100% {
+          transform: rotate(-3deg) translateY(0);
+        }
+        50% {
+          transform: rotate(3deg) translateY(-2px);
+        }
+      }
+
+      .tail-wag {
+        transform-origin: 0% 50%;
+        animation: wag calc(0.5s / var(--anim-speed)) ease-in-out infinite;
+      }
+      .tail-swish {
+        transform-origin: 0% 100%;
+        animation: swish calc(1.6s / var(--anim-speed)) ease-in-out infinite;
+      }
+      @keyframes wag {
+        0%,
+        100% {
+          transform: rotate(-15deg);
+        }
+        50% {
+          transform: rotate(15deg);
+        }
+      }
+      @keyframes swish {
+        0%,
+        100% {
+          transform: rotate(-8deg);
+        }
+        50% {
+          transform: rotate(20deg);
+        }
+      }
+
+      .leg-front {
+        transform-origin: 50% 0%;
+        animation: leg-a calc(0.42s / var(--anim-speed)) ease-in-out infinite;
+      }
+      .leg-back {
+        transform-origin: 50% 0%;
+        animation: leg-b calc(0.42s / var(--anim-speed)) ease-in-out infinite;
+      }
+      @keyframes leg-a {
+        0%,
+        100% {
+          transform: rotate(20deg);
+        }
+        50% {
+          transform: rotate(-20deg);
+        }
+      }
+      @keyframes leg-b {
+        0%,
+        100% {
+          transform: rotate(-20deg);
+        }
+        50% {
+          transform: rotate(20deg);
+        }
+      }
+      .pet.idle .leg-front,
+      .pet.idle .leg-back,
+      .pet.sleep .leg-front,
+      .pet.sleep .leg-back {
+        animation: none;
+        transform: rotate(0);
+      }
+
+      .eye-lid {
+        transform-origin: 50% 50%;
+        transform: scaleY(0);
+        animation: blink calc(4s / var(--anim-speed)) ease-in-out infinite;
+      }
+      @keyframes blink {
+        0%,
+        92%,
+        100% {
+          transform: scaleY(0);
+        }
+        94%,
+        96% {
+          transform: scaleY(1);
+        }
+      }
+      .pet.sleep .eye-lid {
+        transform: scaleY(1);
+        animation: none;
+      }
+
+      /* ===== Zzz, Heart, Hand ===== */
+      .zzz {
+        position: absolute;
+        top: -8px;
+        right: 8px;
+        width: 36px;
+        height: 36px;
+        opacity: 0;
+        pointer-events: none;
+      }
+      .pet.sleep .zzz {
+        animation: zzz-float 2.2s ease-in-out infinite;
+      }
+      @keyframes zzz-float {
+        0% {
+          opacity: 0;
+          transform: translate(0, 0) scale(0.6);
+        }
+        25% {
+          opacity: 1;
+        }
+        100% {
+          opacity: 0;
+          transform: translate(14px, -28px) scale(1.1);
+        }
+      }
+
+      .heart {
+        position: absolute;
+        top: 8px;
+        left: 50%;
+        width: 26px;
+        height: 26px;
+        transform: translateX(-50%) scale(0);
+        pointer-events: none;
+      }
+      .pet.happy .heart {
+        animation: heart-pop 1.2s ease-out forwards;
+      }
+      @keyframes heart-pop {
+        0% {
+          transform: translate(-50%, 0) scale(0);
+          opacity: 0;
+        }
+        20% {
+          transform: translate(-50%, -10px) scale(1.3);
+          opacity: 1;
+        }
+        100% {
+          transform: translate(-50%, -44px) scale(0.85);
+          opacity: 0;
+        }
+      }
+
+      .pet-rub {
+        position: absolute;
+        top: -22px;
+        left: 50%;
+        width: 36px;
+        height: 36px;
+        margin-left: -18px;
+        pointer-events: none;
+        opacity: 0;
+        will-change: transform;
+        filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.45));
+      }
+      .pet.petted .pet-rub {
+        animation: pet-rub 1.8s ease-in-out forwards;
+      }
+      @keyframes pet-rub {
+        0% {
+          opacity: 0;
+          transform: translateY(8px) rotate(-12deg);
+        }
+        10% {
+          opacity: 1;
+          transform: translateY(2px) rotate(-12deg);
+        }
+        25% {
+          transform: translateY(-4px) rotate(8deg);
+        }
+        40% {
+          transform: translateY(2px) rotate(-12deg);
+        }
+        55% {
+          transform: translateY(-4px) rotate(8deg);
+        }
+        70% {
+          transform: translateY(2px) rotate(-12deg);
+        }
+        85% {
+          transform: translateY(-4px) rotate(8deg);
+          opacity: 1;
+        }
+        100% {
+          transform: translateY(-12px) rotate(0deg);
+          opacity: 0;
+        }
+      }
+
+      .pet.spawning {
+        animation: spawn-in 0.6s ease-out;
+      }
+      @keyframes spawn-in {
+        0% {
+          opacity: 0;
+        }
+        100% {
+          opacity: 1;
+        }
+      }
+
+      /* ===== Spawn star burst ===== */
+      .fx-spawn-stars {
+        position: fixed;
+        pointer-events: none;
+        z-index: 300;
+        overflow: visible;
+      }
+      .star-particle {
+        position: absolute;
+        animation: star-burst 0.9s ease-out forwards;
+        pointer-events: none;
+        line-height: 1;
+        user-select: none;
+      }
+      @keyframes star-burst {
+        0% {
+          opacity: 1;
+          transform: translate(0, 0) scale(1);
+        }
+        100% {
+          opacity: 0;
+          transform: translate(var(--star-dx, 0), var(--star-dy, -80px))
+            scale(0.2);
+        }
+      }
+
+      /* ===== Bang command effects (scene-wide overlays) ===== */
+      @keyframes fx-fade-out {
+        0% {
+          opacity: 1;
+        }
+        100% {
+          opacity: 0;
+        }
+      }
+
+      .fx-party {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        z-index: 200;
+        mix-blend-mode: screen;
+        animation: fx-fade-out 0.6s ease-out 7s forwards;
+      }
+      .party-light {
+        position: absolute;
+        width: 60vw;
+        height: 60vw;
+        border-radius: 50%;
+        filter: blur(48px);
+        opacity: 0.85;
+        will-change: transform;
+      }
+      .party-1 {
+        background: radial-gradient(circle, #ff3a8e 0%, transparent 60%);
+        animation: party-orbit 3.6s linear infinite;
+      }
+      .party-2 {
+        background: radial-gradient(circle, #3affc8 0%, transparent 60%);
+        animation: party-orbit 3.6s linear infinite -0.9s;
+      }
+      .party-3 {
+        background: radial-gradient(circle, #ffd93d 0%, transparent 60%);
+        animation: party-orbit 3.6s linear infinite -1.8s;
+      }
+      .party-4 {
+        background: radial-gradient(circle, #6a8eff 0%, transparent 60%);
+        animation: party-orbit 3.6s linear infinite -2.7s;
+      }
+      @keyframes party-orbit {
+        0% {
+          transform: translate(-30vw, -20vh);
+        }
+        25% {
+          transform: translate(70vw, -30vh);
+        }
+        50% {
+          transform: translate(80vw, 60vh);
+        }
+        75% {
+          transform: translate(-30vw, 50vh);
+        }
+        100% {
+          transform: translate(-30vw, -20vh);
+        }
+      }
+
+      .fx-snow,
+      .fx-confetti,
+      .fx-hearts,
+      .fx-rain {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        overflow: hidden;
+        z-index: 150;
+        animation: fx-fade-out 1s ease-out forwards;
+      }
+      .fx-snow {
+        animation-delay: 13s;
+      }
+      .fx-confetti {
+        animation-delay: 7s;
+      }
+      .fx-hearts {
+        animation-delay: 6s;
+      }
+      .fx-rain {
+        animation-delay: 11s;
+      }
+
+      .raindrop {
+        position: absolute;
+        top: -30px;
+        width: 2px;
+        background: linear-gradient(transparent, #6cb8ff 60%, #b3dbff);
+        border-radius: 1px;
+        animation-name: rain-fall;
+        animation-timing-function: linear;
+        animation-iteration-count: 1;
+        animation-fill-mode: forwards;
+      }
+      @keyframes rain-fall {
+        0% {
+          transform: translateY(0);
+        }
+        100% {
+          transform: translateY(110vh);
+        }
+      }
+
+      .snowflake {
+        position: absolute;
+        top: -30px;
+        color: white;
+        text-shadow:
+          0 0 6px rgba(150, 200, 255, 0.7),
+          0 0 12px rgba(255, 255, 255, 0.4);
+        animation-name: snow-fall;
+        animation-timing-function: linear;
+        animation-iteration-count: 1;
+        animation-fill-mode: forwards;
+        user-select: none;
+      }
+      @keyframes snow-fall {
+        0% {
+          transform: translateY(0) translateX(0);
+        }
+        100% {
+          transform: translateY(110vh) translateX(var(--sway, 0));
+        }
+      }
+
+      .confetti-piece {
+        position: absolute;
+        top: -30px;
+        border-radius: 2px;
+        animation-name: confetti-fall;
+        animation-timing-function: linear;
+        animation-iteration-count: 1;
+        animation-fill-mode: forwards;
+      }
+      @keyframes confetti-fall {
+        0% {
+          transform: translate(0, 0) rotate(0deg);
+        }
+        100% {
+          transform: translate(var(--sway, 0), 110vh)
+            rotate(var(--spin, 720deg));
+        }
+      }
+
+      .heart-piece {
+        position: absolute;
+        bottom: -40px;
+        font-size: 24px;
+        animation-name: heart-rise;
+        animation-timing-function: ease-out;
+        animation-iteration-count: 1;
+        animation-fill-mode: forwards;
+        filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.4));
+        user-select: none;
+      }
+      @keyframes heart-rise {
+        0% {
+          transform: translate(0, 0) scale(0.4);
+          opacity: 0;
+        }
+        15% {
+          opacity: 1;
+        }
+        100% {
+          transform: translate(var(--sway, 0), -110vh)
+            scale(var(--end-scale, 1.1));
+          opacity: 0;
+        }
+      }
+
+      .fx-barrelroll {
+        transform-origin: 50% 50%;
+        animation: barrelroll 1.4s cubic-bezier(0.5, 0, 0.5, 1) forwards;
+      }
+      @keyframes barrelroll {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      /* !fireworks — scene-wide bursts */
+      .fx-fireworks {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        overflow: hidden;
+        z-index: 160;
+        animation: fx-fade-out 1s ease-out 7.5s forwards;
+      }
+      .firework-particle {
+        position: absolute;
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        box-shadow: 0 0 12px 2px rgba(255, 255, 255, 0.55);
+        opacity: 0;
+        animation-name: firework-burst;
+        animation-timing-function: cubic-bezier(0.25, 0.8, 0.35, 1);
+        animation-fill-mode: forwards;
+      }
+      @keyframes firework-burst {
+        0% {
+          transform: translate(0, 0) scale(0.5);
+          opacity: 0;
+        }
+        8% {
+          opacity: 1;
+        }
+        100% {
+          transform: translate(var(--dx), var(--dy)) scale(0.4);
+          opacity: 0;
+        }
+      }
+
+      .fx-quake {
+        animation: quake 0.55s linear;
+      }
+      @keyframes quake {
+        0%,
+        100% {
+          transform: translate(0, 0);
+        }
+        8% {
+          transform: translate(-12px, 5px);
+        }
+        18% {
+          transform: translate(10px, -4px);
+        }
+        28% {
+          transform: translate(-8px, 6px);
+        }
+        38% {
+          transform: translate(7px, -3px);
+        }
+        48% {
+          transform: translate(-6px, 5px);
+        }
+        58% {
+          transform: translate(5px, -4px);
+        }
+        68% {
+          transform: translate(-4px, 3px);
+        }
+        78% {
+          transform: translate(3px, -2px);
+        }
+        88% {
+          transform: translate(-1px, 1px);
+        }
+      }
+
+      /* Jump */
+      .pet.jumping .pet-flip {
+        animation: jump 0.75s cubic-bezier(0.3, 0, 0.3, 1);
+      }
+      @keyframes jump {
+        0% {
+          translate: 0 0;
+        }
+        45% {
+          translate: 0 -58px;
+        }
+        100% {
+          translate: 0 0;
+        }
+      }
+
+      /* Dance */
+      .pet.dancing .pet-flip {
+        animation: dance 3s cubic-bezier(0.45, 0, 0.45, 1);
+      }
+      @keyframes dance {
+        0% {
+          translate: 0 0;
+          rotate: 0deg;
+          scale: 1;
+        }
+        5% {
+          translate: -22px -2px;
+          rotate: -32deg;
+          scale: 1;
+        }
+        10% {
+          translate: 18px -16px;
+          rotate: 28deg;
+          scale: 1.06;
+        }
+        15% {
+          translate: -22px -2px;
+          rotate: -32deg;
+          scale: 1;
+        }
+        20% {
+          translate: 18px -16px;
+          rotate: 28deg;
+          scale: 1.06;
+        }
+        25% {
+          translate: 0 0;
+          rotate: 0deg;
+          scale: 1;
+        }
+        35% {
+          translate: 0 -55px;
+          rotate: 360deg;
+          scale: 1.12;
+        }
+        45% {
+          translate: 0 -25px;
+          rotate: 720deg;
+          scale: 1;
+        }
+        52% {
+          translate: -22px 0;
+          rotate: -32deg;
+          scale: 1;
+        }
+        58% {
+          translate: 20px -14px;
+          rotate: 30deg;
+          scale: 1.06;
+        }
+        64% {
+          translate: -22px 0;
+          rotate: -32deg;
+          scale: 1;
+        }
+        70% {
+          translate: 18px -14px;
+          rotate: 28deg;
+          scale: 1.06;
+        }
+        76% {
+          translate: 0 -2px;
+          rotate: 0deg;
+          scale: 1;
+        }
+        86% {
+          translate: 0 -40px;
+          rotate: 380deg;
+          scale: 1.18;
+        }
+        96% {
+          translate: 0 -2px;
+          rotate: 0deg;
+          scale: 0.94;
+        }
+        100% {
+          translate: 0 0;
+          rotate: 0deg;
+          scale: 1;
+        }
+      }
+
+      /* Barrel roll — Star Fox style: arc up while rotating 360 */
+      .pet.rolling .pet-flip {
+        animation: barrel-roll 0.75s cubic-bezier(0.4, 0, 0.4, 1);
+      }
+      @keyframes barrel-roll {
+        0% {
+          translate: 0 0;
+          rotate: 0deg;
+        }
+        35% {
+          translate: 0 -32px;
+          rotate: 130deg;
+        }
+        65% {
+          translate: 0 -32px;
+          rotate: 230deg;
+        }
+        100% {
+          translate: 0 0;
+          rotate: 360deg;
+        }
+      }
+
+      /* Teleport — fade out, JS moves the pet, fade in */
+      .pet.teleporting {
+        animation: teleport 0.7s ease-in-out;
+      }
+      @keyframes teleport {
+        0% {
+          opacity: 1;
+        }
+        35% {
+          opacity: 0;
+        }
+        65% {
+          opacity: 0;
+        }
+        100% {
+          opacity: 1;
+        }
+      }
+
+      /* Fart cloud */
+      .fart {
+        position: absolute;
+        bottom: 4px;
+        width: 90px;
+        height: 70px;
+        opacity: 0;
+        pointer-events: none;
+      }
+      .fart svg {
+        width: 100%;
+        height: 100%;
+        overflow: visible;
+      }
+      .fart-puff {
+        transform-box: fill-box;
+        transform-origin: center;
+        animation-name: fart-puff;
+        animation-timing-function: ease-out;
+        animation-fill-mode: forwards;
+        opacity: 0;
+      }
+      .pet.farting .fart {
+        opacity: 1;
+      }
+      @keyframes fart-puff {
+        0% {
+          transform: translate(0, 0) scale(var(--fart-start, 0.2));
+          opacity: 0;
+        }
+        18% {
+          opacity: var(--fart-peak, 0.85);
+        }
+        100% {
+          transform: translate(var(--fart-dx, 0), var(--fart-dy, -25px))
+            scale(var(--fart-end, 1.4));
+          opacity: 0;
+        }
+      }
+
+      /* Per-pet smoke — wispy gray puffs from upper face */
+      .smoke {
+        position: absolute;
+        top: -14px;
+        left: 50%;
+        margin-left: -35px;
+        width: 70px;
+        height: 90px;
+        opacity: 0;
+        pointer-events: none;
+      }
+      .smoke svg {
+        width: 100%;
+        height: 100%;
+        overflow: visible;
+      }
+      .smoke-puff {
+        transform-box: fill-box;
+        transform-origin: center;
+        animation-name: smoke-puff;
+        animation-timing-function: ease-out;
+        animation-fill-mode: forwards;
+        opacity: 0;
+      }
+      .pet.smoking .smoke {
+        opacity: 1;
+      }
+      @keyframes smoke-puff {
+        0% {
+          transform: translate(0, 0) scale(var(--smoke-start, 0.2));
+          opacity: 0;
+        }
+        20% {
+          opacity: var(--smoke-peak, 0.7);
+        }
+        100% {
+          transform: translate(var(--smoke-dx, 0), var(--smoke-dy, -55px))
+            scale(var(--smoke-end, 1.8));
+          opacity: 0;
+        }
+      }
