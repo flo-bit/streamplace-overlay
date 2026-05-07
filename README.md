@@ -4,9 +4,9 @@ An OBS browser overlay that reads from the AT Protocol firehose and displays ani
 
 ## Quick Start
 
-Add `pets.html` as a browser source in OBS with a URL like:
+Add `index.html` as a browser source in OBS with a URL like:
 
-    pets.html?streamer=did:plc:yourdidhere&repos=stream.place&status=1&limits=safe
+    index.html?streamer=did:plc:yourdidhere&repos=stream.place&status=1&limits=safe
 
 ---
 
@@ -160,4 +160,4 @@ State (pet positions, transforms, type overrides) is persisted to `localStorage`
 
 ## Build
 
-The entire application is a single self-contained HTML file: `pets.html`. No build step, no dependencies.
+The entire application is a single self-contained HTML file: `index.html`. No build step, no dependencies.
